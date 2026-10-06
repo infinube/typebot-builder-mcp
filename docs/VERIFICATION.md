@@ -5,7 +5,7 @@ an actual client/identity session. It is not a release certification.
 
 ## Automated checks
 
-`npm run check` passes all 18 tests, covering configuration, official-contract and graph
+`npm run check` passes all 20 tests, covering configuration, official-contract and graph
 validation, semantic edits, optimistic concurrency, redaction, snapshot hashes/path
 constraints, before/after persistence, webhook delivery and abort/warn policies,
 restore, publication prerequisites, Bearer rejection/acceptance, Streamable HTTP,
@@ -14,9 +14,9 @@ Typebot API used here are deterministic test servers. OAuth tests use signed JWT
 with an injected verifier; an external authorization provider has not been tested.
 
 `npm audit --omit=dev` reported zero vulnerabilities for the committed lockfile.
-The GitHub Actions workflow passed on implementation commit
-`6ba1aef750a193aeb6a9cf078e8439447ccee728`, including all 18 tests and the Docker build:
-https://github.com/infinube/typebot-builder-mcp/actions/runs/37399642846.
+The initial GitHub Actions workflow passed on implementation commit
+`6ba1aef750a193aeb6a9cf078e8439447ccee728`. The v0.1.1 guidance/Text-normalization update also passed CI, including all 20 tests and the Docker build:
+https://github.com/infinube/typebot-builder-mcp/actions/runs/37415806535.
 
 ## Isolated live verification
 
@@ -29,14 +29,11 @@ snapshot restoration, cloning and deletion. All temporary bots were removed.
 An inventory and content-hash comparison confirmed existing bots were unchanged.
 
 A service restart preserved 19 snapshots from the test sequence; restoration after
-restart reproduced the original normalized content hash. An internal gateway probe
-discovered all 38 tools and executed a read-only capability call. An anonymous public
-probe was denied. These checks do not establish a successful ChatGPT Custom App login.
+restart reproduced the original normalized content hash. An internal gateway probe initially discovered all 38 v0.1.0 tools and executed a read-only capability call. A real ChatGPT Custom App connection subsequently authenticated successfully through the deployment identity layer and exercised read/write operations with policy audit. LOG and NOTIFY paths were observed, including delivered default and critical notifications. After the v0.1.1 deployment, the backend advertises 39 tools and a live temporary bot verified semantic Text shorthand normalization to native `richText`, preview rendering and cleanup. Existing Custom App installations need a tool rescan/refresh before the newly added `get_guidance` tool appears in their cached tool inventory.
 
 ## Remaining verification
 
-- Connect a real ChatGPT Custom App through the intended OAuth/identity layer, test
-  permitted and denied identities, and verify policy audit/notification delivery.
+- Test an explicitly denied identity through the intended deployment identity layer.
 - Run compatibility tests before claiming support for Typebot versions other than
   the tested 3.19.0 baseline.
 
