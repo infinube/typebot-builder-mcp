@@ -1,0 +1,28 @@
+{
+  "name": "typebot-builder-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Safe semantic Typebot engineering over MCP",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "Apache-2.0",
+  "bin": {
+    "typebot-builder-mcp": "src/main.js"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "build": "node scripts/check.js",
+    "test": "node --test tests/*.test.js",
+    "check": "npm run build && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "express": "5.2.1",
+    "jose": "6.2.12",
+    "zod": "4.6.5"
+  }
+}

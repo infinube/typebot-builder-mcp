@@ -1,0 +1,5 @@
+import { writeFileSync } from 'node:fs';
+import { toolDefinitions } from '../src/tools.js';
+const tools = toolDefinitions({ api: {}, config: {} });
+const rows = tools.map(t => `| ${t.name} | ${t.classification} | ${t.description} |`);
+writeFileSync('docs/TOOLS.md', `# Tool reference\n\nGenerated from the registered tool definitions. ${tools.length} tools; identical across HTTP and STDIO.\n\n| Tool | Classification | Behavior |\n|---|---|---|\n${rows.join('\n')}\n\nInspect MCP tools/list for exact input JSON schemas. Editing, restore and lifecycle tools require typebotId and expectedHash. Get the current contentHash using get_typebot; after each change use the returned hash for the next operation. IDs are restricted strings, not paths.\n\nRead tools do not modify bots; they may return sensitive definitions, customer results or snapshots. Preview tools may invoke external integrations. Destructive tools remove structures/data or overwrite current draft content. Publication changes runtime availability. Upstream policy must implement real authorization; annotations are hints only.\n`);
