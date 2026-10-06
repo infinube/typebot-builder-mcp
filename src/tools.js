@@ -4,6 +4,7 @@ import { VERSION } from './config.js';
 import { blockContracts, openapi } from './contracts.js';
 import { inspectGraph, validateBot, variableUsage } from './graph.js';
 import { contentHash, diff, redact } from './utils.js';
+import { GUIDANCE_TOPICS, TYPEBOT_COMPATIBILITY, getBlockGuidance, getGuidance } from './guidance.js';
 const id = z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/);
 const botId = { typebotId: id };
 const mutation = { ...botId, expectedHash: z.string().regex(/^[0-9a-f]{64}$/).describe('Current contentHash from get_typebot; rejects stale edits') };
@@ -17,7 +18,8 @@ export function toolDefinitions(service) {
   const add = (name, classification, description, inputSchema, run) => defs.push({ name, classification, description, inputSchema: z.object(inputSchema).strict(), run });
   const read = (name, description, schema, run) => add(name, 'read-only', description, schema, run);
   const edit = (name, operation, description, schema, destructive = false) => add(name, destructive ? 'destructive' : 'mutating', description, { ...mutation, ...schema }, a => service.edit(a, operation));
-  read('capabilities', 'Supported contracts, transports and tool classifications; no credentials.', {}, () => ({ version: VERSION, apiContract: 'Typebot 3.19.0', transports: ['streamable-http', 'stdio'], tools: defs.map(({ name, classification }) => ({ name, classification })) }));
+  read('capabilities', 'Supported contracts, transports, compatibility baseline, guidance topics and tool classifications; no credentials.', {}, () => ({ version: VERSION, apiContract: 'Typebot 3.19.0', typebotCompatibility: TYPEBOT_COMPATIBILITY, guidanceTopics: [...GUIDANCE_TOPICS, 'all'], transports: ['streamable-http', 'stdio'], tools: defs.map(({ name, classification }) => ({ name, classification })) }));
+  read('get_guidance', 'Versioned Typebot-building knowledge pills for AI clients. Use topic=all only when broad guidance is genuinely needed.', { topic: z.enum([...GUIDANCE_TOPICS, 'all']).default('building') }, a => getGuidance(a.topic));
   read('list_workspaces', 'List accessible Typebot workspaces.', {}, () => api.request('GET', '/v1/workspaces'));
   read('list_folders', 'List workspace folders.', { workspaceId: id.optional(), parentFolderId: id.optional() }, a => {
     const workspaceId = a.workspaceId ?? config.workspaceId; if (!workspaceId) throw new Error('workspaceId required');
@@ -37,8 +39,8 @@ export function toolDefinitions(service) {
   });
   read('variable_usage', 'Locate variable ID and template-name references.', { ...botId, variableId: id }, async a => variableUsage((await api.get(a.typebotId)).typebot, a.variableId));
   read('validate_typebot', 'Local schema/graph validation; does not execute integrations.', botId, async a => validateBot((await api.get(a.typebotId)).typebot));
-  read('block_schemas', 'Official block schema contracts. Request one schema name to obtain its JSON schema.', { schemaName: z.string().optional() }, a => {
-    const contracts = blockContracts(); if (a.schemaName) { if (!contracts[a.schemaName]) throw new Error('Schema name not found'); return { ...contracts[a.schemaName], components: openapi.components }; }
+  read('block_schemas', 'Official block schema contracts plus MCP-specific construction guidance for known tricky block types. Request one schema name to obtain its JSON schema.', { schemaName: z.string().optional() }, a => {
+    const contracts = blockContracts(); if (a.schemaName) { if (!contracts[a.schemaName]) throw new Error('Schema name not found'); return { ...contracts[a.schemaName], guidance: getBlockGuidance(a.schemaName), components: openapi.components }; }
     return Object.entries(contracts).map(([name, { type }]) => ({ name, type }));
   });
   read('get_results', 'Read results with bounded page size. Contains conversation data.', { ...botId, limit: z.number().int().min(1).max(100).default(20), cursor: z.number().int().min(0).optional() }, a => api.request('GET', `/v1/typebots/${a.typebotId}/results`, undefined, { limit: a.limit, cursor: a.cursor }));
@@ -53,8 +55,8 @@ export function toolDefinitions(service) {
   edit('add_group', 'add_group', 'Add an empty group.', { title: z.string().min(1), id: id.optional(), coordinates: coordinates.optional() });
   edit('update_group', 'update_group', 'Update group title or graph coordinates.', { groupId: id, patch: z.object({ title: z.string().min(1).optional(), graphCoordinates: coordinates.optional() }).strict() });
   edit('remove_group', 'remove_group', 'Remove group and its blocks and attached edges. Other references must pass validation.', { groupId: id }, true);
-  edit('add_block', 'add_block', 'Insert an official schema-valid block; use block_schemas for current contract. Connections use connect_flow.', { groupId: id, block: object, index: z.number().int().min(0).optional() });
-  edit('update_block', 'update_block', 'Merge a narrow block patch. Arrays replace atomically; IDs/type/outgoingEdgeId cannot change.', { groupId: id, blockId: id, patch: object });
+  edit('add_block', 'add_block', 'Insert an official schema-valid block. For Text, prefer semantic shorthand block {type:"text", text:"..."}; the MCP normalizes it to richText. Use block_schemas for advanced contracts. Connections use connect_flow.', { groupId: id, block: object, index: z.number().int().min(0).optional() });
+  edit('update_block', 'update_block', 'Merge a narrow block patch. For Text, prefer patch {text:"..."}; the MCP normalizes it to richText. Arrays replace atomically; IDs/type/outgoingEdgeId cannot change.', { groupId: id, blockId: id, patch: object });
   edit('remove_block', 'remove_block', 'Remove block and attached edges; validates remaining references.', { groupId: id, blockId: id }, true);
   edit('connect_flow', 'connect', 'Create edge and set matching source outgoingEdgeId; disconnect existing edge first.', {
     from: z.object({ blockId: id.optional(), eventId: id.optional(), itemId: id.optional(), pathId: id.optional() }).strict(), to: z.object({ groupId: id, blockId: id.optional() }).strict(),
