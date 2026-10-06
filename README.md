@@ -7,8 +7,9 @@ editing, validating, snapshotting, restoring and publishing Typebot chatbots. Ty
 the source of truth; no SQL, Redis, GitHub or n8n runtime dependency is required.
 
 **Status:** v0.1.2. The API contract targets Typebot 3.19.0.
-Review the verification report and limitations before production adoption. No stable release
-or verified ChatGPT connection is implied by the existence of this repository.
+Review the verification report and limitations before production adoption. A real ChatGPT
+Custom App connection has been verified on the IngeWeb deployment; authentication and
+workspace-admin behavior remain deployment-specific.
 
 ## Capabilities
 
