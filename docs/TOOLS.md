@@ -1,6 +1,6 @@
 # Tool reference
 
-Generated from the registered tool definitions. 39 tools; identical across HTTP and STDIO.
+Generated from the registered tool definitions. 43 tools; identical across HTTP and STDIO.
 
 | Tool | Classification | Behavior |
 |---|---|---|
@@ -16,7 +16,11 @@ Generated from the registered tool definitions. 39 tools; identical across HTTP 
 | variable_usage | read-only | Locate variable ID and template-name references. |
 | validate_typebot | read-only | Local schema/graph validation; does not execute integrations. |
 | block_schemas | read-only | Official block schema contracts plus MCP-specific construction guidance for known tricky block types. Request one schema name to obtain its JSON schema. |
-| get_results | read-only | Read results with bounded page size. Contains conversation data. |
+| get_results | read-only | Read paginated Typebot results with time filters. Contains customer/conversation data and may include PII. |
+| get_result | read-only | Read one structured Typebot result by resultId. Contains variables/answers and may include PII. |
+| get_result_transcript | read-only | Read one bot/user transcript by resultId. Contains conversation content and may include PII. |
+| get_result_logs | read-only | Read one result's execution logs. May contain sensitive operational context. |
+| find_results | read-only | Bounded search across results by variable name/value and/or answer text. Contains customer/conversation data and may include PII. |
 | get_stats | read-only | Read analytics stats; unavailable until the bot has a published version. |
 | create_typebot | mutating | Create an empty bot with a name; Typebot supplies version and start event. |
 | clone_typebot | mutating | Create an unpublished clone. Integration credential references may be workspace-specific. |
@@ -46,4 +50,4 @@ Generated from the registered tool definitions. 39 tools; identical across HTTP 
 
 Inspect MCP tools/list for exact input JSON schemas. Editing, restore and lifecycle tools require typebotId and expectedHash. Get the current contentHash using get_typebot; after each change use the returned hash for the next operation. IDs are restricted strings, not paths.
 
-Read tools do not modify bots; they may return sensitive definitions, customer results or snapshots. Preview tools may invoke external integrations. Destructive tools remove structures/data or overwrite current draft content. Publication changes runtime availability. Upstream policy must implement real authorization; annotations are hints only.
+Read tools do not modify bots; they may return sensitive definitions, customer results, transcripts, logs or snapshots. Preview tools may invoke external integrations. Destructive tools remove structures/data or overwrite current draft content. Publication changes runtime availability. Upstream policy must implement real authorization; annotations are hints only.
