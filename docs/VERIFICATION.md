@@ -14,7 +14,9 @@ Typebot API used here are deterministic test servers. OAuth tests use signed JWT
 with an injected verifier; an external authorization provider has not been tested.
 
 `npm audit --omit=dev` reported zero vulnerabilities for the committed lockfile.
-The GitHub Actions workflow is supplied but has not yet run for this implementation.
+The GitHub Actions workflow passed on implementation commit
+`6ba1aef750a193aeb6a9cf078e8439447ccee728`, including all 18 tests and the Docker build:
+https://github.com/infinube/typebot-builder-mcp/actions/runs/37399642846.
 
 ## Isolated live verification
 
@@ -33,7 +35,6 @@ probe was denied. These checks do not establish a successful ChatGPT Custom App 
 
 ## Remaining verification
 
-- Publish the implementation and run GitHub Actions.
 - Connect a real ChatGPT Custom App through the intended OAuth/identity layer, test
   permitted and denied identities, and verify policy audit/notification delivery.
 - Run compatibility tests before claiming support for Typebot versions other than
