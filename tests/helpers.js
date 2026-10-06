@@ -20,11 +20,26 @@ export async function listen(app) {
 }
 export async function setup(overrides = {}) {
   const app = express(); app.use(express.json()); let bot = fixture(), published = null, writes = 0; const requests = [];
-  app.use((req, res, next) => { requests.push({ method: req.method, path: req.path }); if (req.headers.authorization !== 'Bearer upstream-secret') return res.sendStatus(401); next(); });
+  const result = {
+    id: 'result1', createdAt: '2026-10-06T00:00:00.000Z', typebotId: 'testbot',
+    variables: [{ id: 'email-var', name: 'email', value: 'alice@example.com', isSessionVariable: false }],
+    isCompleted: true, hasStarted: true, isArchived: false, lastChatSessionId: 'session1',
+    answers: [{ blockId: 'text', content: 'Need pricing information', attachedFileUrls: [] }],
+  };
+  app.use((req, res, next) => { requests.push({ method: req.method, path: req.path, query: { ...req.query } }); if (req.headers.authorization !== 'Bearer upstream-secret') return res.sendStatus(401); next(); });
   app.get('/api/v1/typebots/testbot', (_req, res) => res.json({ typebot: bot, currentUserMode: 'write' }));
   app.patch('/api/v1/typebots/testbot', (req, res) => { writes++; bot = { ...bot, ...req.body.typebot, updatedAt: new Date().toISOString() }; res.json({ typebot: bot }); });
   app.get('/api/v1/typebots/testbot/publishedTypebot', (_req, res) => res.json({ publishedTypebot: published }));
   app.get('/api/v1/typebots/testbot/analytics/stats', (_req, res) => published ? res.json({ totalViews: 0 }) : res.sendStatus(404));
+  app.get('/api/v1/typebots/testbot/results', (_req, res) => res.json({ results: [result], nextCursor: null }));
+  app.get('/api/v1/typebots/testbot/results/result1', (_req, res) => res.json({ result }));
+  app.get('/api/v1/typebots/testbot/results/result1/transcript', (_req, res) => res.json({ transcript: [
+    { role: 'bot', type: 'text', text: 'How can I help?' },
+    { role: 'user', type: 'text', text: 'Need pricing information' },
+  ] }));
+  app.get('/api/v1/typebots/testbot/results/result1/logs', (_req, res) => res.json({ logs: [
+    { id: 'log1', createdAt: '2026-10-06T00:00:01.000Z', resultId: 'result1', status: 'info', description: 'Test log', details: null, context: null },
+  ] }));
   app.post('/api/v1/typebots/testbot/publish', (_req, res) => { writes++; published = structuredClone(bot); res.json({ message: 'success' }); });
   app.post('/api/v1/typebots/testbot/unpublish', (_req, res) => { writes++; published = null; res.json({ message: 'success' }); });
   app.get('/api/v1/workspaces', (_req, res) => res.json({ workspaces: [{ id: 'workspace' }] }));

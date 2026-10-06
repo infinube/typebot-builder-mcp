@@ -12,6 +12,9 @@ const object = z.record(z.string(), z.unknown());
 const coordinates = z.object({ x: z.number(), y: z.number() }).strict();
 const nullable = z.string().nullable();
 const value = z.union([z.string(), z.array(z.string().nullable()), z.null()]);
+const timeFilter = z.enum(['today', 'last7Days', 'last30Days', 'monthToDate', 'lastMonth', 'yearToDate', 'allTime']);
+const timeZone = z.string().min(1).max(100).optional();
+const resultId = id;
 export function toolDefinitions(service) {
   const api = service.api, config = service.config;
   const defs = [];
@@ -43,7 +46,54 @@ export function toolDefinitions(service) {
     const contracts = blockContracts(); if (a.schemaName) { if (!contracts[a.schemaName]) throw new Error('Schema name not found'); return { ...contracts[a.schemaName], guidance: getBlockGuidance(a.schemaName), components: openapi.components }; }
     return Object.entries(contracts).map(([name, { type }]) => ({ name, type }));
   });
-  read('get_results', 'Read results with bounded page size. Contains conversation data.', { ...botId, limit: z.number().int().min(1).max(100).default(20), cursor: z.number().int().min(0).optional() }, a => api.request('GET', `/v1/typebots/${a.typebotId}/results`, undefined, { limit: a.limit, cursor: a.cursor }));
+  read('get_results', 'Read paginated Typebot results. Contains customer/conversation data and may include PII.', { ...botId, limit: z.number().int().min(1).max(500).default(50), cursor: z.number().int().min(0).optional(), timeFilter: timeFilter.default('last7Days'), timeZone }, a => api.request('GET', `/v1/typebots/${encodeURIComponent(a.typebotId)}/results`, undefined, { limit: a.limit, cursor: a.cursor, timeFilter: a.timeFilter, timeZone: a.timeZone }));
+  read('get_result', 'Read one Typebot result by resultId, including captured variables and answers. Contains customer/conversation data and may include PII.', { ...botId, resultId }, a => api.request('GET', `/v1/typebots/${encodeURIComponent(a.typebotId)}/results/${encodeURIComponent(a.resultId)}`));
+  read('get_result_transcript', 'Read the bot/user transcript for one Typebot result. Contains conversation content and may include PII.', { ...botId, resultId }, a => api.request('GET', `/v1/typebots/${encodeURIComponent(a.typebotId)}/results/${encodeURIComponent(a.resultId)}/transcript`));
+  read('get_result_logs', 'Read execution logs for one Typebot result. Logs may contain integration/error context and sensitive data.', { ...botId, resultId }, a => api.request('GET', `/v1/typebots/${encodeURIComponent(a.typebotId)}/results/${encodeURIComponent(a.resultId)}/logs`));
+  read('find_results', 'Search Typebot results by captured variable name/value and/or answer text. Paginates within bounded limits and returns matching result summaries. Contains customer/conversation data and may include PII.', {
+    ...botId,
+    variableName: z.string().min(1).max(200).optional(),
+    variableValue: z.string().min(1).max(500).optional(),
+    answerContains: z.string().min(1).max(500).optional(),
+    timeFilter: timeFilter.default('last30Days'),
+    timeZone,
+    limit: z.number().int().min(1).max(100).default(20),
+    pageSize: z.number().int().min(1).max(500).default(100),
+    maxPages: z.number().int().min(1).max(20).default(5),
+  }, async a => {
+    if (!a.variableName && !a.variableValue && !a.answerContains) throw new Error('At least one result search criterion is required');
+    const wantedName = a.variableName?.toLowerCase(), wantedValue = a.variableValue?.toLowerCase(), wantedAnswer = a.answerContains?.toLowerCase();
+    const matches = []; let cursor; let pagesScanned = 0; let exhausted = false;
+    const valueText = v => Array.isArray(v) ? v.filter(x => x !== null).join(' ') : String(v ?? '');
+    for (let pageNo = 0; pageNo < a.maxPages && matches.length < a.limit; pageNo++) {
+      const page = await api.request('GET', `/v1/typebots/${encodeURIComponent(a.typebotId)}/results`, undefined, {
+        limit: a.pageSize, cursor, timeFilter: a.timeFilter, timeZone: a.timeZone,
+      });
+      pagesScanned++;
+      for (const result of page.results ?? []) {
+        const vars = result.variables ?? [], answers = result.answers ?? [];
+        const variableCandidates = vars.filter(v => (!wantedName || String(v.name ?? '').toLowerCase() === wantedName)
+          && (!wantedValue || valueText(v.value).toLowerCase().includes(wantedValue)));
+        const answerCandidates = wantedAnswer ? answers.filter(x => String(x.content ?? '').toLowerCase().includes(wantedAnswer)) : [];
+        const variableOk = (!wantedName && !wantedValue) || variableCandidates.length > 0;
+        const answerOk = !wantedAnswer || answerCandidates.length > 0;
+        if (!variableOk || !answerOk) continue;
+        matches.push({
+          id: result.id,
+          createdAt: result.createdAt,
+          isCompleted: result.isCompleted,
+          isArchived: result.isArchived,
+          lastChatSessionId: result.lastChatSessionId,
+          matchedVariables: variableCandidates.slice(0, 20).map(v => ({ id: v.id, name: v.name, value: v.value })),
+          matchedAnswers: answerCandidates.slice(0, 20).map(x => ({ blockId: x.blockId, content: String(x.content ?? '').slice(0, 1000), attachedFileUrls: x.attachedFileUrls ?? [] })),
+        });
+        if (matches.length >= a.limit) break;
+      }
+      if (page.nextCursor === null || page.nextCursor === undefined) { exhausted = true; break; }
+      cursor = page.nextCursor;
+    }
+    return { results: matches, count: matches.length, pagesScanned, exhausted, nextCursor: exhausted ? null : cursor };
+  });
   read('get_stats', 'Read analytics stats; unavailable until the bot has a published version.', botId, async a => {
     const state = await api.published(a.typebotId);
     if (!state.publishedTypebot) return { available: false, reason: 'Typebot analytics require a published version', stats: null };

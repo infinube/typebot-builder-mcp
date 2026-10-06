@@ -10,6 +10,7 @@ export const GUIDANCE_TOPICS = Object.freeze([
   'snapshots',
   'preview',
   'publishing',
+  'results',
   'compatibility',
 ]);
 
@@ -46,6 +47,13 @@ const pills = Object.freeze({
     'Validate before publishing.',
     'publish and unpublish are lifecycle mutations and may be externally audited or notified by deployment policy.',
     'Snapshot restore changes draft content only; published lifecycle state is controlled separately.',
+  ],
+  results: [
+    'Typebot results can contain customer identifiers, answers, files and other PII; query only what is needed for the task.',
+    'Use find_results to locate candidate conversations by stable captured variables such as email, phone, customer_id or contact_id.',
+    'Use get_result for the structured result, then get_result_transcript for the full bot/user transcript of a known resultId.',
+    'Use get_result_logs only when execution/integration diagnostics are needed; logs may contain sensitive operational context.',
+    'A person can only be searched reliably if the bot captured a stable identifier in a Typebot variable; Typebot has no universal end-user identity field.',
   ],
   compatibility: [
     'The validated contract baseline is Typebot 3.19.0 with Typebot schema 6.1.',
