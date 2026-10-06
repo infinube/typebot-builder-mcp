@@ -89,6 +89,7 @@ test('Streamable HTTP SDK discovery/read/edit, bearer negative tests and Host/Or
   assert.equal(listedResults.results[0].id, 'result1');
   const foundResults = await call('find_results', { typebotId: 'testbot', variableName: 'email', variableValue: 'alice@example.com', answerContains: 'pricing', timeFilter: 'allTime' });
   assert.equal(foundResults.results[0].id, 'result1'); assert.equal(foundResults.exhausted, true);
+  const emptySearch = await client.callTool({ name: 'find_results', arguments: { typebotId: 'testbot' } }); assert.equal(emptySearch.isError, true);
   const oneResult = await call('get_result', { typebotId: 'testbot', resultId: 'result1' }); assert.equal(oneResult.result.id, 'result1');
   const transcript = await call('get_result_transcript', { typebotId: 'testbot', resultId: 'result1' }); assert.equal(transcript.transcript[1].role, 'user');
   const resultLogs = await call('get_result_logs', { typebotId: 'testbot', resultId: 'result1' }); assert.equal(resultLogs.logs[0].resultId, 'result1');
