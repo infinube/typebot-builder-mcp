@@ -37,7 +37,7 @@ POST the following JSON envelope to the administrator-configured URL:
   "contentHash": "normalized-content-sha256",
   "payloadHash": "full-payload-sha256",
   "bot": {},
-  "serverVersion": "0.1.0"
+  "serverVersion": "0.1.1"
 }
 ```
 
