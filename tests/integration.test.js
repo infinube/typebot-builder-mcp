@@ -83,6 +83,8 @@ test('Streamable HTTP SDK discovery/read/edit, bearer negative tests and Host/Or
   const listed = await client.listTools(); assert.ok(listed.tools.length > 30);
   const call = async (name, args = {}) => { const result = await client.callTool({ name, arguments: args }); assert.ok(!result.isError, result.content?.[0]?.text); return JSON.parse(result.content[0].text); };
   assert.equal((await call('list_workspaces')).workspaces.length, 1);
+  const guidance = await call('get_guidance', { topic: 'text-blocks' });
+  assert.equal(guidance.baseline.testedVersion, '3.19.0'); assert.ok(guidance.pills.some(p => p.includes('richText')));
   const bot = await call('get_typebot', { typebotId: 'testbot' });
   const edited = await call('update_metadata', { typebotId: 'testbot', expectedHash: bot.contentHash, patch: { name: 'Via MCP' } }); assert.equal(edited.mutationApplied, true);
   const smoke = await call('smoke_test', { typebotId: 'testbot', messages: ['Hi'] }); assert.equal(smoke.steps.length, 2);
