@@ -85,6 +85,14 @@ test('Streamable HTTP SDK discovery/read/edit, bearer negative tests and Host/Or
   assert.equal((await call('list_workspaces')).workspaces.length, 1);
   const guidance = await call('get_guidance', { topic: 'text-blocks' });
   assert.equal(guidance.baseline.testedVersion, '3.19.0'); assert.ok(guidance.pills.some(p => p.includes('richText')));
+  const listedResults = await call('get_results', { typebotId: 'testbot', limit: 500, timeFilter: 'allTime', timeZone: 'UTC' });
+  assert.equal(listedResults.results[0].id, 'result1');
+  const foundResults = await call('find_results', { typebotId: 'testbot', variableName: 'email', variableValue: 'alice@example.com', answerContains: 'pricing', timeFilter: 'allTime' });
+  assert.equal(foundResults.results[0].id, 'result1'); assert.equal(foundResults.exhausted, true);
+  const oneResult = await call('get_result', { typebotId: 'testbot', resultId: 'result1' }); assert.equal(oneResult.result.id, 'result1');
+  const transcript = await call('get_result_transcript', { typebotId: 'testbot', resultId: 'result1' }); assert.equal(transcript.transcript[1].role, 'user');
+  const resultLogs = await call('get_result_logs', { typebotId: 'testbot', resultId: 'result1' }); assert.equal(resultLogs.logs[0].resultId, 'result1');
+  assert.ok(s.requests.some(r => r.path.endsWith('/results') && r.query.timeFilter === 'allTime' && r.query.timeZone === 'UTC'));
   const bot = await call('get_typebot', { typebotId: 'testbot' });
   const edited = await call('update_metadata', { typebotId: 'testbot', expectedHash: bot.contentHash, patch: { name: 'Via MCP' } }); assert.equal(edited.mutationApplied, true);
   const smoke = await call('smoke_test', { typebotId: 'testbot', messages: ['Hi'] }); assert.equal(smoke.steps.length, 2);
