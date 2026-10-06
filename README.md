@@ -6,7 +6,7 @@ Typebot Builder MCP is an independent community implementation for discovering, 
 editing, validating, snapshotting, restoring and publishing Typebot chatbots. Typebot remains
 the source of truth; no SQL, Redis, GitHub or n8n runtime dependency is required.
 
-**Status:** v0.1.0, initial implementation. The API contract targets Typebot 3.19.0.
+**Status:** v0.1.1. The API contract targets Typebot 3.19.0.
 Review the verification report and limitations before production adoption. No stable release
 or verified ChatGPT connection is implied by the existence of this repository.
 
@@ -16,6 +16,7 @@ or verified ChatGPT connection is implied by the existence of this repository.
 - Independent incoming bearer auth; OAuth resource-server validation of audience-bound
   RFC 9068 JWT access tokens; explicitly configurable none mode for isolated environments.
 - Semantic groups/blocks/edges/variables/settings editing with current-hash preconditions.
+- Versioned AI guidance (`get_guidance`) and Text shorthand normalized to Typebot `richText` for the tested baseline.
 - Official contract and local graph validation, semantic diffs and explicit uncertainty.
 - Before/after filesystem snapshots, generic webhook delivery, both or off.
 - Verified snapshot inspection, diff and draft rollback.

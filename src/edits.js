@@ -1,6 +1,34 @@
 import { randomBytes } from 'node:crypto';
 import { variableUsage, walk } from './graph.js';
 export const newId = () => randomBytes(12).toString('hex');
+export function richTextFromText(text) {
+  if (typeof text !== 'string') throw new Error('Text shorthand must be a string');
+  return text.replace(/\r\n/g, '\n').split('\n').map(line => ({ type: 'p', children: [{ text: line }] }));
+}
+export function normalizeBlockForTypebot(input) {
+  const block = structuredClone(input);
+  if ('text' in block) {
+    if (block.type !== 'text') throw new Error('Text shorthand is only valid for Text blocks');
+    if (block.content !== undefined) throw new Error('Use either semantic text or raw content, not both');
+    block.content = { richText: richTextFromText(block.text) };
+    delete block.text;
+  } else if (block.type === 'text' && block.content?.richText === undefined && typeof block.content?.plainText === 'string') {
+    block.content = { ...block.content, richText: richTextFromText(block.content.plainText) };
+  }
+  return block;
+}
+export function normalizeBlockPatchForTypebot(current, input) {
+  const patch = structuredClone(input);
+  if ('text' in patch) {
+    if (current.type !== 'text') throw new Error('Text shorthand is only valid for Text blocks');
+    if (patch.content !== undefined) throw new Error('Use either semantic text or raw content, not both');
+    patch.content = { richText: richTextFromText(patch.text) };
+    delete patch.text;
+  } else if (current.type === 'text' && patch.content?.richText === undefined && typeof patch.content?.plainText === 'string') {
+    patch.content = { ...patch.content, richText: richTextFromText(patch.content.plainText) };
+  }
+  return patch;
+}
 function merge(target, patch) {
   for (const [key, value] of Object.entries(patch)) {
     if (['__proto__', 'constructor', 'prototype'].includes(key)) throw new Error('Unsafe key');
@@ -34,11 +62,13 @@ export function editBot(original, operation, args) {
     case 'add_block': {
       const g = group(), index = args.index ?? g.blocks.length;
       if (index < 0 || index > g.blocks.length) throw new Error('Invalid insertion index');
-      g.blocks.splice(index, 0, { ...args.block, id: args.block.id ?? newId() }); break;
+      const normalized = normalizeBlockForTypebot(args.block);
+      g.blocks.splice(index, 0, { ...normalized, id: normalized.id ?? newId() }); break;
     }
     case 'update_block': {
       if ('id' in args.patch || 'type' in args.patch || 'outgoingEdgeId' in args.patch) throw new Error('Block ID, type and connection must be changed through dedicated operations');
-      merge(block(), args.patch); break;
+      const target = block();
+      merge(target, normalizeBlockPatchForTypebot(target, args.patch)); break;
     }
     case 'remove_block': { const b = block(); removeReferences(bot, [b.id]); group().blocks = group().blocks.filter(x => x.id !== b.id); break; }
     case 'connect': {

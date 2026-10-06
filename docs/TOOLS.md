@@ -1,10 +1,11 @@
 # Tool reference
 
-Generated from the registered tool definitions. 38 tools; identical across HTTP and STDIO.
+Generated from the registered tool definitions. 39 tools; identical across HTTP and STDIO.
 
 | Tool | Classification | Behavior |
 |---|---|---|
-| capabilities | read-only | Supported contracts, transports and tool classifications; no credentials. |
+| capabilities | read-only | Supported contracts, transports, compatibility baseline, guidance topics and tool classifications; no credentials. |
+| get_guidance | read-only | Versioned Typebot-building knowledge pills for AI clients. Use topic=all only when broad guidance is genuinely needed. |
 | list_workspaces | read-only | List accessible Typebot workspaces. |
 | list_folders | read-only | List workspace folders. |
 | list_typebots | read-only | List bot IDs and metadata; optionally filter by name. |
@@ -14,7 +15,7 @@ Generated from the registered tool definitions. 38 tools; identical across HTTP 
 | find_elements | read-only | Find groups and blocks by title, ID, type or serialized content. |
 | variable_usage | read-only | Locate variable ID and template-name references. |
 | validate_typebot | read-only | Local schema/graph validation; does not execute integrations. |
-| block_schemas | read-only | Official block schema contracts. Request one schema name to obtain its JSON schema. |
+| block_schemas | read-only | Official block schema contracts plus MCP-specific construction guidance for known tricky block types. Request one schema name to obtain its JSON schema. |
 | get_results | read-only | Read results with bounded page size. Contains conversation data. |
 | get_stats | read-only | Read analytics stats; unavailable until the bot has a published version. |
 | create_typebot | mutating | Create an empty bot with a name; Typebot supplies version and start event. |
@@ -23,8 +24,8 @@ Generated from the registered tool definitions. 38 tools; identical across HTTP 
 | add_group | mutating | Add an empty group. |
 | update_group | mutating | Update group title or graph coordinates. |
 | remove_group | destructive | Remove group and its blocks and attached edges. Other references must pass validation. |
-| add_block | mutating | Insert an official schema-valid block; use block_schemas for current contract. Connections use connect_flow. |
-| update_block | mutating | Merge a narrow block patch. Arrays replace atomically; IDs/type/outgoingEdgeId cannot change. |
+| add_block | mutating | Insert an official schema-valid block. For Text, prefer semantic shorthand block {type:"text", text:"..."}; the MCP normalizes it to richText. Use block_schemas for advanced contracts. Connections use connect_flow. |
+| update_block | mutating | Merge a narrow block patch. For Text, prefer patch {text:"..."}; the MCP normalizes it to richText. Arrays replace atomically; IDs/type/outgoingEdgeId cannot change. |
 | remove_block | destructive | Remove block and attached edges; validates remaining references. |
 | connect_flow | mutating | Create edge and set matching source outgoingEdgeId; disconnect existing edge first. |
 | disconnect_flow | mutating | Remove an edge and its outgoingEdgeId reference. |

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.1';
 export function loadConfig(env = process.env) {
   const oneOf = (key, values, fallback) => {
     const value = env[key] ?? fallback;
