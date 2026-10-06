@@ -8,6 +8,7 @@ import { hash, contentHash, redact, diff } from '../src/utils.js';
 import { editBot } from '../src/edits.js';
 import { validateBot, variableUsage } from '../src/graph.js';
 import { SnapshotStore } from '../src/snapshots.js';
+import { getGuidance } from '../src/guidance.js';
 import { fixture, setup } from './helpers.js';
 const env = { TYPEBOT_API_URL: 'https://builder.example.com/api', TYPEBOT_API_TOKEN: 'upstream', MCP_BEARER_TOKEN: 'a'.repeat(40) };
 test('configuration modes, secret boundaries and fail-closed validation', () => {
@@ -48,6 +49,35 @@ test('semantic helpers preserve unrelated blocks and maintain connection integri
   assert.throws(() => editBot(original, 'update_block', { groupId: 'group', blockId: 'missing', patch: {} }));
   assert.throws(() => editBot(original, 'connect', { from: { eventId: 'start' }, to: { groupId: 'group' } }));
 });
+test('semantic Text shorthand normalizes to richText and keeps raw advanced content available', () => {
+  const original = fixture();
+  const added = editBot(original, 'add_block', { groupId: 'group', block: { type: 'text', text: 'Line one\nLine two' } });
+  const created = added.groups[0].blocks.at(-1);
+  assert.equal(created.type, 'text');
+  assert.equal(created.text, undefined);
+  assert.deepEqual(created.content.richText, [
+    { type: 'p', children: [{ text: 'Line one' }] },
+    { type: 'p', children: [{ text: 'Line two' }] },
+  ]);
+  assert.equal(validateBot(added).valid, true);
+
+  const updated = editBot(original, 'update_block', { groupId: 'group', blockId: 'text', patch: { text: 'Updated' } });
+  assert.equal(updated.groups[0].blocks[0].content.richText[0].children[0].text, 'Updated');
+
+  const compat = editBot(original, 'update_block', { groupId: 'group', blockId: 'text', patch: { content: { plainText: 'Compatibility' } } });
+  assert.equal(compat.groups[0].blocks[0].content.richText[0].children[0].text, 'Compatibility');
+
+  assert.throws(() => editBot(original, 'add_block', { groupId: 'group', block: { type: 'image', text: 'invalid' } }), /Text shorthand/);
+  assert.throws(() => editBot(original, 'update_block', { groupId: 'group', blockId: 'text', patch: { text: 'x', content: { richText: [] } } }), /either semantic text or raw content/);
+});
+
+test('versioned guidance exposes compatibility and text construction pills', () => {
+  const guidance = getGuidance('text-blocks');
+  assert.equal(guidance.baseline.testedVersion, '3.19.0');
+  assert.equal(guidance.baseline.schemaVersion, '6.1');
+  assert.ok(guidance.pills.some(p => p.includes('richText')));
+});
+
 test('variables reject deletion in use and rename template references', () => {
   const b = fixture(); b.variables.push({ id: 'v', name: 'person' }); b.groups[0].blocks[0].content.plainText = '{{person}}';
   assert.equal(variableUsage(b, 'v').length, 1);
