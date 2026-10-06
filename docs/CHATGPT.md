@@ -72,5 +72,5 @@ contains ChatGPT-side metadata/Skills; the live MCP endpoint owns the runtime to
 contract.
 
 Provider/UI details can evolve. Verify current ChatGPT workspace controls whenever the
-admin interface changes. Do not put private credentials, backend bearer tokens or
-internal-only infrastructure details in public documentation.
+admin interface changes. Do not put private credentials or internal-only infrastructure
+details in public documentation.
