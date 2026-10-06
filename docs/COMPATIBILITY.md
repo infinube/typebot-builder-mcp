@@ -24,6 +24,7 @@ There are no assumed individual group/block REST endpoints. Folders/workspaces a
 readable; management CRUD beyond bot operations is deliberately not exposed by this MVP.
 No raw whole-bot overwrite tool is included. Block and settings support derive from the
 vendored official JSON Schema 2020-12 contract rather than hand-invented options.
+For the tested 3.19.0 / schema 6.1 baseline, the MCP also provides a semantic Text shorthand: `add_block` accepts `{type:"text", text:"..."}` and `update_block` accepts `{text:"..."}`. The server normalizes those forms to native `content.richText` before contract validation. Raw `content.richText` remains available for advanced formatting, and raw `content.plainText` is compatibility-normalized when `richText` is absent.
 Unknown keys are rejected locally. Existing legacy bots are returned/migrated by Typebot;
 only definitions passing the bundled update schema and graph checks can be written.
 
