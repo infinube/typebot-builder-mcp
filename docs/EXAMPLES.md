@@ -6,16 +6,18 @@ actual response rather than assuming example IDs. Use a dedicated temporary test
 1. list_workspaces, then create_typebot with workspaceId and name.
 2. get_typebot: retain contentHash and the first start event's ID.
 3. add_group: typebotId, expectedHash, title. Inspect the diff for the new group ID.
-4. add_block: typebotId, latest expectedHash, groupId and a schema-valid text block:
+4. add_block: typebotId, latest expectedHash, groupId and the semantic Text shorthand:
 
 ```json
 {
   "type": "text",
-  "content": {
-    "richText": [{"type": "p", "children": [{"text": "Hello from Typebot Builder MCP"}]}]
-  }
+  "text": "Hello from Typebot Builder MCP"
 }
 ```
+
+The MCP normalizes this to native Typebot `content.richText` for the tested baseline. Use
+`block_schemas` or `get_guidance(topic="text-blocks")` when advanced formatting is needed;
+raw `content.richText` remains supported.
 
 5. connect_flow: from.eventId is the start event; to.groupId is the new group.
 6. validate_typebot, inspect_graph, then smoke_test with no replies.
