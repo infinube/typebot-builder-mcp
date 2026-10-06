@@ -6,7 +6,7 @@ Typebot Builder MCP is an independent community implementation for discovering, 
 editing, validating, snapshotting, restoring and publishing Typebot chatbots. Typebot remains
 the source of truth; no SQL, Redis, GitHub or n8n runtime dependency is required.
 
-**Status:** v0.1.1. The API contract targets Typebot 3.19.0.
+**Status:** v0.1.2. The API contract targets Typebot 3.19.0.
 Review the verification report and limitations before production adoption. No stable release
 or verified ChatGPT connection is implied by the existence of this repository.
 
@@ -22,6 +22,7 @@ or verified ChatGPT connection is implied by the existence of this repository.
 - Verified snapshot inspection, diff and draft rollback.
 - Publish/unpublish with validation; published-state inspection.
 - Builder API preview conversations and smoke tests, classified as effectful.
+- Persisted result search, structured result retrieval, full transcripts and result logs through official Typebot APIs.
 - Docker-first non-root runtime, persistent snapshots and health endpoint.
 
 No unrestricted full-bot overwrite tool is exposed. Preview can execute integrations.
@@ -47,6 +48,7 @@ For local execution: `npm ci --ignore-scripts`, `npm run check`, then
 - [Docker, STDIO and HTTP](docs/DEPLOYMENT.md)
 - [Tool reference](docs/TOOLS.md)
 - [Snapshots and webhook contract](docs/SNAPSHOTS.md)
+- [Results and conversation inspection](docs/RESULTS.md)
 - [OAuth/OIDC integration](docs/OAUTH.md)
 - [ChatGPT Custom App procedure and verification status](docs/CHATGPT.md)
 - [Typebot compatibility](docs/COMPATIBILITY.md)
